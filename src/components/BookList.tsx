@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Link from "next/link";
+import { useState } from "react";
+import DeleteConfirmationModal from "./DeleteConfirmationModal";
 
 interface Book {
   _id: string;
@@ -19,16 +21,24 @@ interface BookListProps {
 
 export default function BookList({ books, fetchBooks }: BookListProps) {
   const router = useRouter();
+  const [showModal, setShowModal] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState<string | null>(null);
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this book?")) {
-      try {
-        await axios.delete(`http://localhost:4000/api/v1/books/${id}`);
-        fetchBooks();
-      } catch (error) {
-        console.error("Error deleting book:", error);
-      }
+  const confirmDelete = async () => {
+    if (!bookToDelete) return;
+    try {
+      await axios.delete(`http://localhost:4000/api/v1/books/${bookToDelete}`);
+      fetchBooks();
+    } catch (error) {
+      console.error("Error deleting book:", error);
+    } finally {
+      setBookToDelete(null);
     }
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setBookToDelete(id);
+    setShowModal(true);
   };
 
   const handleEdit = (id: string) => {
@@ -57,49 +67,62 @@ export default function BookList({ books, fetchBooks }: BookListProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 w-1/2">
-      <table className="w-full text-left border-collapse">
-        <thead>
-          <tr className="bg-gray-50 text-gray-600">
-            <th className="p-3 font-medium">Title</th>
-            <th className="p-3 font-medium">Author</th>
-            <th className="p-3 font-medium">ISBN</th>
-            <th className="p-3 font-medium">Published</th>
-            <th className="p-3 font-medium">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {books.map((book) => (
-            <tr key={book._id} className="border-t border-gray-200">
-              <td className="p-3">{book.title}</td>
-              <td className="p-3">{book.author}</td>
-              <td className="p-3">{book.isbn}</td>
-              <td className="p-3">{book.publishedYear}</td>
-              <td className="p-3 flex space-x-3">
-                <button
-                  onClick={() => handleViewDetails(book._id)}
-                  className="text-blue-600 hover:text-blue-800"
-                  title="View Book Details"
-                >
-                  📖
-                </button>
-                <button
-                  onClick={() => handleEdit(book._id)}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  ✏️
-                </button>
-                <button
-                  onClick={() => handleDelete(book._id)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  🗑️
-                </button>
-              </td>
+    <>
+      <div className="bg-white rounded-lg shadow p-6 w-1/2">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-gray-50 text-gray-600">
+              <th className="p-3 font-medium">Title</th>
+              <th className="p-3 font-medium">Author</th>
+              <th className="p-3 font-medium">ISBN</th>
+              <th className="p-3 font-medium">Published</th>
+              <th className="p-3 font-medium">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {books.map((book) => (
+              <tr key={book._id} className="border-t border-gray-200">
+                <td className="p-3">{book.title}</td>
+                <td className="p-3">{book.author}</td>
+                <td className="p-3">{book.isbn}</td>
+                <td className="p-3">{book.publishedYear}</td>
+                <td className="p-3 flex space-x-3">
+                  <button
+                    onClick={() => handleViewDetails(book._id)}
+                    className="text-blue-600 hover:text-blue-800"
+                    title="View Book Details"
+                  >
+                    📖
+                  </button>
+                  <button
+                    onClick={() => handleEdit(book._id)}
+                    className="text-blue-600 hover:text-blue-800"
+                    title="Edit Book"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClick(book._id)}
+                    className="text-red-600 hover:text-red-800"
+                    title="Delete Book"
+                  >
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <DeleteConfirmationModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setBookToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+      />
+    </>
   );
 }
