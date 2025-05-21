@@ -56,11 +56,11 @@ export default function BookForm({
           `http://localhost:4000/api/v1/books/${book._id}`,
           formData
         );
-        onUpdateSuccess?.(); // Call callback if provided
-        router.push("/");    // ✅ Redirect after update
+        onUpdateSuccess?.();
+        router.push("/");   
       } else {
         await axios.post("http://localhost:4000/api/v1/books", formData);
-        router.push("/");    // ✅ Redirect after create
+        router.push("/");   
       }
     } catch (err) {
       console.error("Error saving book:", err);
